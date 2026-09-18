@@ -203,6 +203,14 @@ git push origin vX.Y.Z
 gh release create vX.Y.Z --generate-notes
 ```
 
+4. CD takes over: publishing the GitHub release triggers
+   `.github/workflows/release.yml`, which guards that the tag matches
+   `Cargo.toml` and runs `cargo publish` with `CARGO_REGISTRY_TOKEN`.
+   No manual `cargo login` / `cargo publish`. After the run, confirm the
+   crates.io version page + docs.rs build before announcing. Never commit
+   registry tokens; the secret is scoped to `tonggeret` and rotated on
+   any exposure.
+
 Patch = fix, minor = additive, major = breaking (incl. `SCHEMA_VERSION` bump).
 
 ## Troubleshooting for agents
