@@ -3,6 +3,14 @@
 All notable changes to `tonggeret` are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.3.1] - 2026-09-18
+
+### Changed
+- No library changes. Release automation: publishing a GitHub release now
+  auto-publishes to crates.io via `.github/workflows/release.yml`
+  (tag-vs-`Cargo.toml` guard + `cargo publish`), with a
+  `publish-dry-run` CI job on PRs.
+
 ## [0.3.0] - 2026-09-18
 
 ### Added
