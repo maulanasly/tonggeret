@@ -1,7 +1,7 @@
 //! User-facing configuration with pay-for-what-you-use defaults.
 //!
 //! ```rust
-//! use duckmetrics::Config;
+//! use tonggeret::Config;
 //! // Prometheus-only, no storage thread spawned:
 //! let light = Config::default_light();
 //! // Full dual-mode with embedded Fjall LSM-tree at `./data/fjall`:
@@ -130,7 +130,7 @@ impl Default for PrometheusConfig {
 pub struct Config {
     /// Bounded channel capacity between hot path and Fjall writer.
     /// Default `16_384`. When full, samples are **dropped** and counted in
-    /// `duckmetrics_dropped_total` (never blocks serving threads).
+    /// `tonggeret_dropped_total` (never blocks serving threads).
     pub channel_capacity: usize,
     /// `None` ⇒ Prometheus-only mode (no writer thread spawned).
     pub fjall: Option<FjallConfig>,

@@ -1,4 +1,4 @@
-//! Minimal Axum server showcasing `duckmetrics` in ~30 lines.
+//! Minimal Axum server showcasing `tonggeret` in ~30 lines.
 //!
 //! Run with:
 //! ```sh
@@ -16,8 +16,8 @@
 use std::net::SocketAddr;
 
 use axum::{Router, extract::Query, middleware, response::IntoResponse, routing::get};
-use duckmetrics::middleware::axum as dm_axum;
 use serde::Deserialize;
+use tonggeret::middleware::axum as dm_axum;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[derive(Debug, Deserialize)]
@@ -30,19 +30,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "axum_server=debug,duckmetrics=debug".into()),
+                .unwrap_or_else(|_| "axum_server=debug,tonggeret=debug".into()),
         )
         .with(tracing_subscriber::fmt::layer())
         .init();
 
     // --- 2-line initialization -------------------------------------------
     #[cfg(feature = "fjall-backend")]
-    let fjall_cfg = duckmetrics::FjallConfig::new("./data/fjall");
+    let fjall_cfg = tonggeret::FjallConfig::new("./data/fjall");
     #[cfg(feature = "fjall-backend")]
-    let config = duckmetrics::Config::default_light().with_fjall(fjall_cfg.clone());
+    let config = tonggeret::Config::default_light().with_fjall(fjall_cfg.clone());
     #[cfg(not(feature = "fjall-backend"))]
-    let config = duckmetrics::Config::default_light();
-    duckmetrics::init(config)?;
+    let config = tonggeret::Config::default_light();
+    tonggeret::init(config)?;
     // ----------------------------------------------------------------------
 
     let app = Router::new()
@@ -64,9 +64,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 async fn hello() -> impl IntoResponse {
     // Custom business metrics — non-blocking, lock-free.
-    duckmetrics::counter!("greetings_total", 1.0, route = "/");
-    duckmetrics::gauge!("active_sessions", 7.0, region = "eu");
-    "hello from duckmetrics"
+    tonggeret::counter!("greetings_total", 1.0, route = "/");
+    tonggeret::gauge!("active_sessions", 7.0, region = "eu");
+    "hello from tonggeret"
 }
 
 async fn create_order(Query(q): Query<OrderParams>) -> impl IntoResponse {
@@ -75,7 +75,7 @@ async fn create_order(Query(q): Query<OrderParams>) -> impl IntoResponse {
     tokio::time::sleep(std::time::Duration::from_millis(12)).await;
 
     if q.fail.unwrap_or(0) == 1 {
-        duckmetrics::counter!("orders_total", 1.0, route = "/orders", status = "error");
+        tonggeret::counter!("orders_total", 1.0, route = "/orders", status = "error");
         return (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             "order failed",
@@ -83,7 +83,7 @@ async fn create_order(Query(q): Query<OrderParams>) -> impl IntoResponse {
     }
 
     let elapsed_ms = start.elapsed().as_secs_f64() * 1_000.0;
-    duckmetrics::counter!("orders_total", 1.0, route = "/orders", status = "ok");
-    duckmetrics::histogram!("db_query_ms", elapsed_ms, table = "orders");
+    tonggeret::counter!("orders_total", 1.0, route = "/orders", status = "ok");
+    tonggeret::histogram!("db_query_ms", elapsed_ms, table = "orders");
     (axum::http::StatusCode::OK, "order created")
 }

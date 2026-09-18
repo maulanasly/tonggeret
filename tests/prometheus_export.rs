@@ -4,21 +4,21 @@
 
 #![cfg(feature = "prometheus-exporter")]
 
-use duckmetrics::Config;
+use tonggeret::Config;
 
 fn ensure_init() {
-    let _ = duckmetrics::init(Config::default_light());
+    let _ = tonggeret::init(Config::default_light());
 }
 
 #[test]
 fn counter_gauge_histogram_exported() {
     ensure_init();
 
-    duckmetrics::counter!("it_requests_total", 3.0, method = "GET", path = "/");
-    duckmetrics::gauge!("it_queue_depth", 9.0);
-    duckmetrics::histogram!("it_latency_ms", 42.0, route = "/");
+    tonggeret::counter!("it_requests_total", 3.0, method = "GET", path = "/");
+    tonggeret::gauge!("it_queue_depth", 9.0);
+    tonggeret::histogram!("it_latency_ms", 42.0, route = "/");
 
-    let text = duckmetrics::prometheus_text().expect("gather");
+    let text = tonggeret::prometheus_text().expect("gather");
     assert!(
         text.contains("it_requests_total"),
         "missing counter:\n{text}"
@@ -27,7 +27,7 @@ fn counter_gauge_histogram_exported() {
     assert!(text.contains("it_latency_ms"), "missing histogram:\n{text}");
     // Internal drop counter is always registered.
     assert!(
-        text.contains("duckmetrics_dropped_total"),
+        text.contains("tonggeret_dropped_total"),
         "missing drop counter:\n{text}"
     );
 }
@@ -35,11 +35,11 @@ fn counter_gauge_histogram_exported() {
 #[test]
 fn direct_api_matches_macros() {
     ensure_init();
-    duckmetrics::record_counter(
+    tonggeret::record_counter(
         "it_direct_total",
         1.0,
         vec![("a".to_string(), "b".to_string())],
     );
-    let text = duckmetrics::prometheus_text().unwrap();
+    let text = tonggeret::prometheus_text().unwrap();
     assert!(text.contains("it_direct_total"));
 }

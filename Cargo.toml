@@ -1,5 +1,5 @@
 [package]
-name = "duckmetrics"
+name = "tonggeret"
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.85"
@@ -48,6 +48,11 @@ tempfile = "3"
 [[example]]
 name = "axum_server"
 required-features = ["axum"]
+
+# docs.rs builds with every feature so intra-doc links to `fjall-backend`
+# / `actix` items always resolve.
+[package.metadata.docs.rs]
+all-features = true
 
 [lints.rust]
 unsafe_code = "forbid"

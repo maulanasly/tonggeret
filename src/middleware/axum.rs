@@ -2,7 +2,7 @@
 //!
 //! ```rust,no_run
 //! use axum::{Router, routing::get, middleware};
-//! use duckmetrics::middleware::axum as dm_axum;
+//! use tonggeret::middleware::axum as dm_axum;
 //!
 //! # async fn hello() -> &'static str { "hi" }
 //! let app: Router = Router::new()
@@ -99,7 +99,7 @@ fn truncate_path(p: &str) -> String {
 ///
 /// ```rust,no_run
 /// use axum::Router;
-/// use duckmetrics::middleware::axum as dm_axum;
+/// use tonggeret::middleware::axum as dm_axum;
 /// use std::path::PathBuf;
 ///
 /// let app: Router = Router::new()

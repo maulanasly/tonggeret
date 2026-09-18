@@ -1,4 +1,4 @@
-# Pre-commit for duckmetrics (Rust-only, local hooks).
+# Pre-commit for tonggeret (Rust-only, local hooks).
 # Install: pipx install pre-commit  OR  pip install pre-commit
 # Then: pre-commit install
 # Run: pre-commit run --all-files

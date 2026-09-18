@@ -1,45 +1,45 @@
-# duckmetrics
+# tonggeret
 
 [![CI](https://github.com/maulanasly/tonggeret/actions/workflows/ci.yml/badge.svg)](https://github.com/maulanasly/tonggeret/actions/workflows/ci.yml)
-[![crates.io](https://img.shields.io/crates/v/duckmetrics.svg)](https://crates.io/crates/duckmetrics)
-[![docs.rs](https://img.shields.io/docsrs/duckmetrics.svg)](https://docs.rs/duckmetrics)
+[![crates.io](https://img.shields.io/crates/v/tonggeret.svg)](https://crates.io/crates/tonggeret)
+[![docs.rs](https://img.shields.io/docsrs/tonggeret.svg)](https://docs.rs/tonggeret)
 [![MSRV](https://img.shields.io/badge/MSRV-1.85-blue.svg)](https://www.rust-lang.org)
 [![license](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE-MIT)
 [![edition](https://img.shields.io/badge/edition-2024-blueviolet.svg)](https://doc.rust-lang.org/edition-guide/rust-2024/)
 
 Ultra-low-memory Rust telemetry: **embedded Fjall LSM-tree** (<10 MiB RAM footprint) for high-throughput local ingestion, standard **Prometheus exposition**, and periodic **Parquet cold storage** — behind a non-blocking, lock-free hot path.
 
-> Crate name is `duckmetrics`; the GitHub remote is [`maulanasly/tonggeret`](https://github.com/maulanasly/tonggeret).
+> Crate name is `tonggeret`; the GitHub remote is [`maulanasly/tonggeret`](https://github.com/maulanasly/tonggeret).
 
 * Dual-mode dispatch: every `counter!` / `gauge!` / `histogram!` updates Prometheus atomics **and** streams to Fjall via a bounded channel → dedicated writer thread → LSM memtable.
 * Pure Rust, no SQL engine, no C++ toolchain: `fjall` + `parquet` + `arrow` only. `#![forbid(unsafe_code)]`.
 * Plug-and-play Axum (`from_fn`) and Actix-web (`Transform`) middleware recording `http_requests_total` + `http_request_duration_ms`.
 
 ```rust
-duckmetrics::init(duckmetrics::Config::default_light())?; // or ::default_full("./data/fjall")
+tonggeret::init(tonggeret::Config::default_light())?; // or ::default_full("./data/fjall")
 
-duckmetrics::counter!("orders_total", 1.0, method = "POST", route = "/orders");
-duckmetrics::gauge!("queue_depth", 42.0);
-duckmetrics::histogram!("db_query_ms", 12.4, table = "orders");
+tonggeret::counter!("orders_total", 1.0, method = "POST", route = "/orders");
+tonggeret::gauge!("queue_depth", 42.0);
+tonggeret::histogram!("db_query_ms", 12.4, table = "orders");
 ```
 
 ## Status
 
 Pre-1.0 (`0.1.0` is the first release of the restarted line; prior DuckDB-based iteration was discarded). Expect additive API evolution; any breaking storage change bumps `SCHEMA_VERSION` and is noted in [`CHANGELOG.md`](CHANGELOG.md).
 
-Docs: [`docs.rs/duckmetrics`](https://docs.rs/duckmetrics) · Changelog: [`CHANGELOG.md`](CHANGELOG.md) · Contributing: [`AGENTS.md`](AGENTS.md).
+Docs: [`docs.rs/tonggeret`](https://docs.rs/tonggeret) · Changelog: [`CHANGELOG.md`](CHANGELOG.md) · Contributing: [`AGENTS.md`](AGENTS.md).
 
 ## Installation
 
 ```toml
 # Prometheus + Axum (defaults, fast build)
-duckmetrics = "0.1"
+tonggeret = "0.1"
 
 # Dual-mode with embedded Fjall + Parquet (pure Rust, no system deps)
-duckmetrics = { version = "0.1", features = ["fjall-backend"] }
+tonggeret = { version = "0.1", features = ["fjall-backend"] }
 
 # Actix-web instead of / in addition to Axum
-duckmetrics = { version = "0.1", default-features = false, features = ["actix", "prometheus-exporter"] }
+tonggeret = { version = "0.1", default-features = false, features = ["actix", "prometheus-exporter"] }
 ```
 
 Requires Rust **1.85+** (edition 2024, MSRV enforced in CI). License: **MIT** ([`LICENSE-MIT`](LICENSE-MIT)).
@@ -51,15 +51,15 @@ Requires Rust **1.85+** (edition 2024, MSRV enforced in CI). License: **MIT** ([
 | `prometheus-exporter` | In-memory registry + text exposition | ✅ |
 | `fjall-backend` | Fjall LSM-tree ingestion + Parquet compaction (`fjall`, `parquet`, `arrow`, `chrono`) | ❌ |
 | `axum` | `middleware::axum::track` + `/metrics` + `/telemetry/parquet` route | ✅ |
-| `actix` | `middleware::actix::DuckMetrics` + scrape handler | ❌ |
+| `actix` | `middleware::actix::Tonggeret` + scrape handler | ❌ |
 
 ## Quickstart — Axum
 
 ```rust
 use axum::{Router, routing::get, middleware};
-use duckmetrics::middleware::axum as dm_axum;
+use tonggeret::middleware::axum as dm_axum;
 
-duckmetrics::init(duckmetrics::Config::default_full("./data/fjall"))?;
+tonggeret::init(tonggeret::Config::default_full("./data/fjall"))?;
 
 let app = Router::new()
     .route("/", get(|| async { "hi" }))
@@ -74,31 +74,31 @@ Full runnable server: [`examples/axum_server.rs`](examples/axum_server.rs)
 Actix-web:
 
 ```rust
-use duckmetrics::middleware::actix::{DuckMetrics, prometheus_handler};
+use tonggeret::middleware::actix::{Tonggeret, prometheus_handler};
 let app = actix_web::App::new()
-    .wrap(DuckMetrics)
+    .wrap(Tonggeret)
     .route("/metrics", actix_web::web::get().to(prometheus_handler));
 ```
 
 ## Configuration
 
 ```rust
-let mut fjall = duckmetrics::FjallConfig::new("./data/fjall");
+let mut fjall = tonggeret::FjallConfig::new("./data/fjall");
 fjall.cache_size_bytes = 8 * 1024 * 1024;  // unified block cache (default 8 MiB)
 fjall.memtable_bytes = 2 * 1024 * 1024;    // per-partition memtable cap (default 2 MiB)
 fjall.retention = std::time::Duration::from_secs(24 * 3600);
 fjall.compaction_interval = std::time::Duration::from_secs(3600);
 // fjall.cold_storage_dir = Some("./data/cold".into());
-let cfg = duckmetrics::Config::default_light()
+let cfg = tonggeret::Config::default_light()
     .with_channel_capacity(16_384)
     .with_fjall(fjall);
-duckmetrics::init(cfg)?;
+tonggeret::init(cfg)?;
 ```
 
-* Channel full ⇒ sample dropped for Fjall, still recorded in Prometheus, `duckmetrics_dropped_total` incremented. Never blocks serving threads.
+* Channel full ⇒ sample dropped for Fjall, still recorded in Prometheus, `tonggeret_dropped_total` incremented. Never blocks serving threads.
 * Steady-state RAM ≈ `cache_size_bytes` + `memtable_bytes` (<10 MiB by default) plus transient batch/compaction buffers.
-* If `init` runs before the Tokio runtime exists, call `duckmetrics::spawn_compaction_task(&fjall_cfg)` once inside the runtime.
-* `duckmetrics::shutdown()` persists + joins the writer at process exit.
+* If `init` runs before the Tokio runtime exists, call `tonggeret::spawn_compaction_task(&fjall_cfg)` once inside the runtime.
+* `tonggeret::shutdown()` persists + joins the writer at process exit.
 
 ## Storage schema specification
 

@@ -1,4 +1,4 @@
-//! Typed errors for `duckmetrics`.
+//! Typed errors for `tonggeret`.
 //!
 //! All backend-specific failures are stringified so the public API surface
 //! stays stable regardless of which Cargo features are enabled.
@@ -8,12 +8,12 @@ use thiserror::Error;
 /// Crate-wide [`Result`](std::result::Result) alias.
 pub type Result<T> = std::result::Result<T, Error>;
 
-/// All errors producible by `duckmetrics`.
+/// All errors producible by `tonggeret`.
 #[derive(Debug, Error)]
 #[non_exhaustive]
 pub enum Error {
     /// [`crate::init`] was called more than once in this process.
-    #[error("duckmetrics already initialized")]
+    #[error("tonggeret already initialized")]
     AlreadyInitialized,
 
     /// A metric macro / API was used before [`crate::init`].
@@ -22,7 +22,7 @@ pub enum Error {
     /// they no-op when uninitialized to keep request paths non-blocking.
     /// This variant is returned by fallible APIs such as
     /// [`crate::prometheus_text`] or [`crate::shutdown`].
-    #[error("duckmetrics not initialized; call duckmetrics::init() first")]
+    #[error("tonggeret not initialized; call tonggeret::init() first")]
     NotInitialized,
 
     /// Invalid user configuration.
