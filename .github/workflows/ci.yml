@@ -79,3 +79,14 @@ jobs:
       #   no Node runtime, works on forks, and reads `.cargo/audit.toml`.
       - run: cargo install cargo-audit --locked
       - run: cargo audit
+
+  publish-dry-run:
+    name: publish dry-run
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      # Catches packaging breakage (missing files, bad metadata) on the PR
+      # instead of on release night. Real publishing happens in release.yml.
+      - run: cargo publish --dry-run
