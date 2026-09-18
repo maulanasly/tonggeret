@@ -14,7 +14,7 @@ jobs:
     name: fmt
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt
@@ -24,7 +24,7 @@ jobs:
     name: clippy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
@@ -42,7 +42,7 @@ jobs:
           - "--features fjall-backend"
           - "--all-features"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - run: cargo test ${{ matrix.features }}
@@ -51,7 +51,7 @@ jobs:
     name: doc
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - run: RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --all-features
@@ -60,7 +60,7 @@ jobs:
     name: msrv (1.85)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@1.85
       - uses: Swatinem/rust-cache@v2
       - run: cargo test --locked
@@ -68,9 +68,14 @@ jobs:
   audit:
     name: audit
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
-      - uses: actions/checkout@v4
-      - uses: rustsec/audit-check@v2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      # Direct `cargo audit` instead of `rustsec/audit-check@v2`:
+      # - `audit-check@v2.0.0` still ships a Node20 bundle (deprecated
+      #   runner warning) and needs the Checks API, which fork PRs cannot
+      #   use (`Resource not accessible by integration`). A plain run has
+      #   no Node runtime, works on forks, and reads `.cargo/audit.toml`.
+      - run: cargo install cargo-audit --locked
+      - run: cargo audit
