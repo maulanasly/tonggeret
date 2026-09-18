@@ -1,0 +1,62 @@
+[package]
+name = "duckmetrics"
+version = "0.2.0"
+edition = "2024"
+rust-version = "1.85"
+license = "MIT"
+description = "Ultra-low-memory Rust telemetry: embedded Fjall LSM-tree ingestion + Prometheus exposition + Parquet cold storage"
+repository = "https://github.com/maulanasly/tonggeret"
+keywords = ["metrics", "telemetry", "prometheus", "fjall", "observability"]
+categories = ["development-tools::profiling", "database", "web-programming"]
+readme = "README.md"
+
+[features]
+default = ["axum", "prometheus-exporter"]
+fjall-backend = ["dep:fjall", "dep:parquet", "dep:arrow", "dep:chrono"]
+prometheus-exporter = ["dep:prometheus"]
+axum = ["dep:axum", "dep:tower", "dep:tower-http", "prometheus-exporter"]
+actix = ["dep:actix-web", "prometheus-exporter"]
+
+[dependencies]
+tokio = { version = "1", features = ["rt-multi-thread", "sync", "time", "macros"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tracing = "0.1"
+thiserror = "2"
+
+# Optional backends / integrations
+fjall = { version = "2", optional = true }
+parquet = { version = "50", optional = true, features = ["arrow"] }
+arrow = { version = "50", optional = true }
+# Pinned to the arrow-50 era: chrono >= 0.4.42 added `ChronoDateExt::quarter`,
+# which makes arrow-arith 50.0.0 fail to compile (ambiguous method call).
+chrono = { version = "=0.4.38", optional = true, features = ["serde", "clock"] }
+prometheus = { version = "0.13", optional = true }
+axum = { version = "0.7", optional = true }
+tower = { version = "0.5", optional = true }
+tower-http = { version = "0.5", optional = true, features = ["fs"] }
+actix-web = { version = "4", optional = true }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["full"] }
+axum = "0.7"
+tower = { version = "0.5", features = ["util"] }
+http-body-util = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+tempfile = "3"
+
+[[example]]
+name = "axum_server"
+required-features = ["axum"]
+
+[lints.rust]
+unsafe_code = "forbid"
+missing_debug_implementations = "warn"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+nursery = "allow"
+doc_markdown = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"

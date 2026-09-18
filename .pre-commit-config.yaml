@@ -1,0 +1,32 @@
+# Pre-commit for duckmetrics (Rust-only, local hooks).
+# Install: pipx install pre-commit  OR  pip install pre-commit
+# Then: pre-commit install
+# Run: pre-commit run --all-files
+# Fallback without the framework (see AGENTS.md step 6):
+#   cargo fmt --check
+#   cargo clippy --all-targets --features fjall-backend -- -D warnings
+#   cargo test --features fjall-backend
+
+repos:
+  - repo: local
+    hooks:
+      - id: cargo-fmt
+        name: cargo fmt --check
+        entry: bash -c 'cargo fmt --check'
+        language: system
+        pass_filenames: false
+        always_run: true
+
+      - id: cargo-clippy
+        name: cargo clippy pedantic
+        entry: bash -c 'cargo clippy --all-targets --features fjall-backend -- -D warnings'
+        language: system
+        pass_filenames: false
+        always_run: true
+
+      - id: cargo-test-fjall
+        name: cargo test fjall-backend
+        entry: bash -c 'cargo test --features fjall-backend'
+        language: system
+        pass_filenames: false
+        always_run: true
