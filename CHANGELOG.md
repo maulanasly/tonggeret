@@ -6,6 +6,12 @@ All notable changes to `tonggeret` are documented here. Format follows
 ## [Unreleased]
 
 ### Changed (breaking)
+- `axum` integration (`axum` feature, `middleware::axum`, example) now
+  requires Axum 0.8 (`axum 0.7.9` → `0.8.9`, `axum-core 0.4` → `0.5`).
+  No source changes were needed: `track`, `prometheus_handler`, and
+  `parquet_route` use APIs identical in 0.8 (verified: full test suite +
+  example smoke test, including bare `/orders` with no query string).
+  Axum 0.7 users should pin `tonggeret 0.1.x`.
 - Crate renamed `duckmetrics` → `tonggeret` (matches the
   `maulanasly/tonggeret` remote); all `duckmetrics::` paths, the Actix
   `DuckMetrics` middleware (now `Tonggeret`), and the internal series
