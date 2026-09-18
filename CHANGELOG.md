@@ -3,7 +3,7 @@
 All notable changes to `tonggeret` are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [Unreleased]
+## [0.3.0] - 2026-09-18
 
 ### Added
 - Visitor tracking (`visitors` module + `track_visitors` Axum middleware /
@@ -11,14 +11,6 @@ All notable changes to `tonggeret` are documented here. Format follows
   `unique_visitors_estimate{region}` gauge via a std-only HyperLogLog
   (~4 KiB/region, ~1.6% error). Regions come from CDN country headers;
   visitor keys are hashed, never stored.
-
-### Changed (breaking)
-- Crate renamed `duckmetrics` → `tonggeret` (matches the
-  `maulanasly/tonggeret` remote); all `duckmetrics::` paths, the Actix
-  `DuckMetrics` middleware (now `Tonggeret`), and the internal series
-  `duckmetrics_dropped_total` (now `tonggeret_dropped_total`) follow suit.
-  `SCHEMA_VERSION` unchanged (1): on-disk key/value and Parquet formats
-  are identical.
 
 ## [0.2.0] - 2026-09-18
 
