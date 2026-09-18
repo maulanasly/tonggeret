@@ -11,10 +11,10 @@
 //!     .layer(middleware::from_fn(dm_axum::track));
 //! ```
 
-use std::time::Instant;
+use std::{net::SocketAddr, time::Instant};
 
 use axum::{
-    extract::{MatchedPath, Request},
+    extract::{ConnectInfo, MatchedPath, Request},
     http::{StatusCode, header},
     middleware::Next,
     response::{IntoResponse, Response},
@@ -53,6 +53,50 @@ pub async fn track(req: Request, next: Next) -> Response {
         vec![("method".to_string(), method), ("path".to_string(), path)],
     );
     response
+}
+
+/// Record `visitors_total` + HyperLogLog uniques per region for each request.
+///
+/// Region comes from CDN country headers (see
+/// [`crate::visitors::parse_region`]); identity is the first
+/// `X-Forwarded-For` entry (else the connection peer) plus `User-Agent`,
+/// hashed only — raw identifiers are never stored. Counts `unknown` region
+/// and `direct` peer when the proxy headers / [`ConnectInfo`] are absent.
+/// Enable only behind a proxy/CDN that sets and sanitizes these headers.
+///
+/// ```rust,no_run
+/// use axum::{Router, routing::get, middleware};
+/// use tonggeret::middleware::axum as dm_axum;
+///
+/// # async fn hello() -> &'static str { "hi" }
+/// let app: Router = Router::new()
+///     .route("/", get(hello))
+///     .route("/metrics", get(dm_axum::prometheus_handler))
+///     .layer(middleware::from_fn(dm_axum::track_visitors));
+/// ```
+pub async fn track_visitors(req: Request, next: Next) -> Response {
+    let headers = req.headers();
+    let region = crate::visitors::parse_region(
+        headers.get("cf-ipcountry").and_then(|v| v.to_str().ok()),
+        headers
+            .get("x-vercel-ip-country")
+            .and_then(|v| v.to_str().ok()),
+        headers
+            .get("cloudfront-viewer-country")
+            .and_then(|v| v.to_str().ok()),
+    );
+    let forwarded = headers.get("x-forwarded-for").and_then(|v| v.to_str().ok());
+    let user_agent = headers
+        .get(header::USER_AGENT)
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("");
+    let peer = req
+        .extensions()
+        .get::<ConnectInfo<SocketAddr>>()
+        .map_or_else(|| "direct".to_string(), |c| c.0.to_string());
+    let key = crate::visitors::visitor_key(forwarded, &peer, user_agent);
+    let _ = crate::visitors::observe_visitor(&key, &region);
+    next.run(req).await
 }
 
 /// `GET /metrics` handler returning Prometheus text exposition.
