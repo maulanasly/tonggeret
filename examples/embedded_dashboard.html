@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>duckmetrics — embedded dashboard (DuckDB-WASM)</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; max-width: 960px; }
+    code, pre { background: #f4f4f5; padding: 2px 6px; border-radius: 6px; }
+    pre { padding: 1rem; overflow: auto; }
+    table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
+    th, td { border: 1px solid #ddd; padding: 6px 10px; text-align: left; font-variant-numeric: tabular-nums; }
+    button { padding: 8px 14px; cursor: pointer; }
+    #status { margin: 1rem 0; color: #555; }
+  </style>
+  <script type="importmap">
+    {
+      "imports": {
+        "@duckdb/duckdb-wasm": "https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.28.0/+esm",
+        "apache-arrow": "https://cdn.jsdelivr.net/npm/apache-arrow@16.1.0/+esm"
+      }
+    }
+  </script>
+</head>
+<body>
+  <h1>duckmetrics — client-side analytics</h1>
+  <p>
+    This page runs SQL <em>in your browser</em> against the server's Parquet exports
+    (<code>metrics_cold_*.parquet</code>) using
+    <code>@duckdb/duckdb-wasm</code> (client-side query engine only — the server
+    itself is pure Rust). The easiest source is the crate's
+    <code>GET /telemetry/parquet</code> endpoint (see
+    <code>parquet_route</code>), which always serves the newest export; to browse
+    older files, serve the export dir from Axum, e.g.
+    <code>ServeDir::new("./data")</code> mounted at <code>/export</code>, then open this file
+    against the same host (or adjust the URL below).
+  </p>
+
+  <label>Parquet URL:
+    <input id="url" size="60" value="/telemetry/parquet" />
+  </label>
+  <button id="run">Run hourly avg query</button>
+  <div id="status">duckdb-wasm not loaded yet…</div>
+  <pre id="sql">SELECT
+  date_trunc('hour', ts) AS hour,
+  name,
+  count(*) AS n,
+  avg(value) AS avg_value,
+  max(value) AS max_value
+FROM read_parquet('PQ')
+GROUP BY 1, 2
+ORDER BY 1 DESC, 2
+LIMIT 100;</pre>
+  <table id="out"><thead></thead><tbody></tbody></table>
+
+  <script type="module">
+    import * as duckdb from '@duckdb/duckdb-wasm';
+
+    const status = document.getElementById('status');
+    const outHead = document.querySelector('#out thead');
+    const outBody = document.querySelector('#out tbody');
+
+    // Pick matching bundles for this browser.
+    const JSDELIVR_BUNDLES = duckdb.getJsDelivrBundles();
+    const bundle = await duckdb.selectBundle(JSDELIVR_BUNDLES);
+    const workerUrl = URL.createObjectURL(
+      new Blob([`importScripts("${bundle.mainWorker}");`], { type: 'text/javascript' })
+    );
+    const worker = new Worker(workerUrl);
+    const logger = new duckdb.ConsoleLogger();
+    const db = new duckdb.AsyncDuckDB(logger, worker);
+    await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
+    URL.revokeObjectURL(workerUrl);
+    status.textContent = 'duckdb-wasm ready. Pick a Parquet URL and hit Run.';
+
+    document.getElementById('run').onclick = async () => {
+      const url = document.getElementById('url').value.trim();
+      status.textContent = `fetching ${url} …`;
+      try {
+        const conn = await db.connect();
+        // Fetch remote parquet into the WASM FS.
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
+        const buf = new Uint8Array(await res.arrayBuffer());
+        await db.registerFileBuffer('metrics.parquet', buf);
+        const sql = document.getElementById('sql').textContent.replaceAll("'PQ'", "'metrics.parquet'");
+        const arrow = await conn.query(sql);
+        const rows = arrow.toArray().map(r => r.toJSON());
+        render(rows);
+        status.textContent = `${rows.length} rows from ${url}`;
+        await conn.close();
+      } catch (e) {
+        status.textContent = `query failed: ${e.message}`;
+      }
+    };
+
+    function render(rows) {
+      outHead.innerHTML = ''; outBody.innerHTML = '';
+      if (!rows.length) return;
+      const cols = Object.keys(rows[0]);
+      outHead.innerHTML = '<tr>' + cols.map(c => `<th>${c}</th>`).join('') + '</tr>';
+      outBody.innerHTML = rows.map(r =>
+        '<tr>' + cols.map(c => `<td>${r[c]}</td>`).join('') + '</tr>'
+      ).join('');
+    }
+  </script>
+</body>
+</html>

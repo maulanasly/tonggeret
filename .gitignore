@@ -1,0 +1,11 @@
+/target/
+data/
+*.db
+*.db.wal
+*.parquet
+.DS_Store
+# graphify local context memory (per AGENTS.md: rebuild locally, never commit)
+graphify-out/
+.graphify*
+# pre-commit / editor noise
+.pre-commit-config.yaml.orig
