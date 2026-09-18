@@ -27,7 +27,7 @@ thiserror = "2"
 # Optional backends / integrations
 fjall = { version = "2", optional = true }
 parquet = { version = "50", optional = true, features = ["arrow"] }
-arrow = { version = "50", optional = true }
+arrow = { version = "54", optional = true }
 # Pinned to the arrow-50 era: chrono >= 0.4.42 added `ChronoDateExt::quarter`,
 # which makes arrow-arith 50.0.0 fail to compile (ambiguous method call).
 chrono = { version = "=0.4.38", optional = true, features = ["serde", "clock"] }
