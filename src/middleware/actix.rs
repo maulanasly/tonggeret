@@ -3,13 +3,13 @@
 //!
 //! ```rust,no_run
 //! use actix_web::{App, web, HttpResponse};
-//! use duckmetrics::middleware::actix::DuckMetrics;
+//! use tonggeret::middleware::actix::Tonggeret;
 //!
 //! async fn hello() -> HttpResponse { HttpResponse::Ok().body("hi") }
 //! let app = App::new()
-//!     .wrap(DuckMetrics)
+//!     .wrap(Tonggeret)
 //!     .route("/", web::get().to(hello))
-//!     .route("/metrics", web::get().to(duckmetrics::middleware::actix::prometheus_handler));
+//!     .route("/metrics", web::get().to(tonggeret::middleware::actix::prometheus_handler));
 //! ```
 
 use std::{
@@ -24,11 +24,11 @@ use actix_web::{
     dev::{Service, ServiceRequest, ServiceResponse, Transform, forward_ready},
 };
 
-/// Actix-web middleware. Attach with `.wrap(DuckMetrics)`.
+/// Actix-web middleware. Attach with `.wrap(Tonggeret)`.
 #[derive(Debug, Clone, Copy, Default)]
-pub struct DuckMetrics;
+pub struct Tonggeret;
 
-impl<S, B> Transform<S, ServiceRequest> for DuckMetrics
+impl<S, B> Transform<S, ServiceRequest> for Tonggeret
 where
     S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error> + 'static,
     S::Future: 'static,
@@ -36,24 +36,24 @@ where
 {
     type Response = ServiceResponse<B>;
     type Error = Error;
-    type Transform = DuckMetricsService<S>;
+    type Transform = TonggeretService<S>;
     type InitError = ();
     type Future = Ready<Result<Self::Transform, Self::InitError>>;
 
     fn new_transform(&self, service: S) -> Self::Future {
-        ready(Ok(DuckMetricsService {
+        ready(Ok(TonggeretService {
             service: Rc::new(service),
         }))
     }
 }
 
-/// Inner service produced by [`DuckMetrics`].
+/// Inner service produced by [`Tonggeret`].
 #[derive(Debug)]
-pub struct DuckMetricsService<S> {
+pub struct TonggeretService<S> {
     service: Rc<S>,
 }
 
-impl<S, B> Service<ServiceRequest> for DuckMetricsService<S>
+impl<S, B> Service<ServiceRequest> for TonggeretService<S>
 where
     S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error> + 'static,
     S::Future: 'static,

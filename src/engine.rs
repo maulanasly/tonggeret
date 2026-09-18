@@ -7,7 +7,7 @@
 //! * uninitialized ⇒ silent no-op (so libraries can emit metrics
 //!   unconditionally);
 //! * channel full ⇒ sample dropped for Fjall, still counted in Prometheus,
-//!   `duckmetrics_dropped_total` incremented.
+//!   `tonggeret_dropped_total` incremented.
 
 use std::sync::{
     Arc, Mutex, OnceLock,
@@ -155,7 +155,7 @@ impl EngineHandle {
 ///
 /// ```rust,no_run
 /// # #[cfg(all(feature = "prometheus-exporter"))] {
-/// duckmetrics::init(duckmetrics::Config::default_light()).unwrap();
+/// tonggeret::init(tonggeret::Config::default_light()).unwrap();
 /// # }
 /// ```
 // `Config` is intentionally consumed: `fjall` moves into the background tasks.
@@ -191,7 +191,7 @@ pub fn init(config: Config) -> Result<()> {
         let batch_rows = fcfg.batch_rows;
         let writer_handles = (*handles).clone();
         let join = std::thread::Builder::new()
-            .name("duckmetrics-writer".to_string())
+            .name("tonggeret-writer".to_string())
             .spawn(move || {
                 crate::storage::fjall_engine::writer_loop(receiver, writer_handles, batch_rows);
             })
@@ -209,7 +209,7 @@ pub fn init(config: Config) -> Result<()> {
     tracing::info!(
         has_fjall = handle.has_fjall(),
         has_prometheus = handle.has_prometheus(),
-        "duckmetrics initialized"
+        "tonggeret initialized"
     );
     Ok(())
 }
@@ -269,7 +269,7 @@ pub fn shutdown() -> Result<()> {
         }
     }
 
-    tracing::info!("duckmetrics shut down");
+    tracing::info!("tonggeret shut down");
     Ok(())
 }
 

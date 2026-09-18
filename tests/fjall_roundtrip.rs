@@ -4,7 +4,7 @@
 
 use std::time::Duration;
 
-use duckmetrics::{
+use tonggeret::{
     MetricEntry, MetricType,
     config::FjallConfig,
     storage::{
@@ -57,12 +57,12 @@ fn insert_scan_compact_purge_and_read_parquet() {
     let dir = tempfile::tempdir().unwrap();
     let cfg = test_config(dir.path());
 
-    let handles = duckmetrics::storage::fjall_engine::open_handles(&cfg).unwrap();
+    let handles = tonggeret::storage::fjall_engine::open_handles(&cfg).unwrap();
 
     // One fresh row + one stale row (epoch micros ⇒ older than any retention).
     let fresh = MetricEntry::new("fresh_total", 1.0, MetricType::Counter, vec![]);
     let stale = MetricEntry::new("stale_total", 2.0, MetricType::Counter, vec![]);
-    let now_micros = duckmetrics::storage::fjall_engine::entry_micros(&fresh);
+    let now_micros = tonggeret::storage::fjall_engine::entry_micros(&fresh);
     handles
         .partition
         .insert(encode_key(now_micros, 0, &fresh.name), encode_value(&fresh))

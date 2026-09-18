@@ -151,7 +151,7 @@ pub(crate) fn writer_loop(
     handles: FjallHandles,
     batch_rows: usize,
 ) {
-    tracing::info!("duckmetrics fjall writer thread started");
+    tracing::info!("tonggeret fjall writer thread started");
     let mut batch: Vec<MetricEntry> = Vec::with_capacity(batch_rows);
     let mut seq: u32 = 0;
 

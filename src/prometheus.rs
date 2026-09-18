@@ -44,7 +44,7 @@ impl PromRegistry {
     pub fn new(default_buckets: Vec<f64>) -> Result<Self> {
         let registry = Registry::new();
         let dropped_opts = Opts::new(
-            "duckmetrics_dropped_total",
+            "tonggeret_dropped_total",
             "Total metric samples dropped because the Fjall channel was full",
         );
         let dropped_total =
@@ -153,7 +153,7 @@ impl PromRegistry {
             return Some(v.clone());
         }
         let refs = Self::label_refs(label_names);
-        let opts = Opts::new(name.to_string(), format!("duckmetrics counter {name}"));
+        let opts = Opts::new(name.to_string(), format!("tonggeret counter {name}"));
         let vec = match CounterVec::new(opts, &refs) {
             Ok(v) => v,
             Err(e) => {
@@ -189,7 +189,7 @@ impl PromRegistry {
             return Some(v.clone());
         }
         let refs = Self::label_refs(label_names);
-        let opts = Opts::new(name.to_string(), format!("duckmetrics gauge {name}"));
+        let opts = Opts::new(name.to_string(), format!("tonggeret gauge {name}"));
         let vec = match GaugeVec::new(opts, &refs) {
             Ok(v) => v,
             Err(e) => {
@@ -225,7 +225,7 @@ impl PromRegistry {
             return Some(v.clone());
         }
         let refs = Self::label_refs(label_names);
-        let opts = HistogramOpts::new(name.to_string(), format!("duckmetrics histogram {name}"))
+        let opts = HistogramOpts::new(name.to_string(), format!("tonggeret histogram {name}"))
             .buckets(self.default_buckets.clone());
         let vec = match HistogramVec::new(opts, &refs) {
             Ok(v) => v,

@@ -1,8 +1,7 @@
-# AGENTS.md — duckmetrics contributor guide
+# AGENTS.md — tonggeret contributor guide
 
-> Crate `duckmetrics` lives in this dir but the GitHub remote is
-> `maulanasly/tonggeret` (public). Keep crate name `duckmetrics`;
-> only the remote URL differs.
+> Crate `tonggeret` in this dir; GitHub remote is
+> `maulanasly/tonggeret` (public).
 
 ## What this is
 
@@ -42,7 +41,7 @@ MSRV 1.85+, edition 2024. `cargo clippy` pedantic is enforced
   `FjallConfig{dir, cache 8MiB, memtable 2MiB, retention 24h, compaction 1h, batch 1000}`.
 * `src/types.rs` — `MetricEntry`, `MetricType`, sanitization
   (`[a-zA-Z_:][a-zA-Z0-9_:]*`, values ≤256 chars, ≤16 pairs).
-* `src/prometheus.rs` — lazy `CounterVec/GaugeVec/HistogramVec`, `duckmetrics_dropped_total`.
+* `src/prometheus.rs` — lazy `CounterVec/GaugeVec/HistogramVec`, `tonggeret_dropped_total`.
 * `src/storage/fjall_engine.rs` — single `open_handles()`, key
   `{micros:016x}:{seq:08x}:{name}`, JSON value, `writer_loop`.
 * `src/storage/parquet_exporter.rs` — hourly `metrics_cold_*.parquet` ZSTD,
@@ -58,7 +57,7 @@ Feature flags: `prometheus-exporter` (default on), `axum` (default on),
 ## Invariants (do not break)
 
 * Hot path never `.await` / never blocks: `try_send` only. Full channel ⇒
-  drop for Fjall, still count in Prometheus + `duckmetrics_dropped_total`.
+  drop for Fjall, still count in Prometheus + `tonggeret_dropped_total`.
 * Uninitialized ⇒ silent no-op. `init()` once, `shutdown()` once at exit.
 * Exactly one Fjall `open_handles()` per process; share via `Arc`. Never open same dir twice.
 * `SCHEMA_VERSION` bump + `CHANGELOG.md` entry on any key/value/Parquet breaking change.
@@ -197,7 +196,7 @@ Release only on explicit yes:
 
 ```bash
 git checkout main && git pull --ff-only
-git tag -a vX.Y.Z -m "duckmetrics vX.Y.Z"
+git tag -a vX.Y.Z -m "tonggeret vX.Y.Z"
 git push origin vX.Y.Z
 gh release create vX.Y.Z --generate-notes
 ```
