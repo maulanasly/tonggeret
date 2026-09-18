@@ -119,6 +119,81 @@ where
     }
 }
 
+/// Actix-web middleware recording visitor totals + uniques (see [`crate::visitors`]).
+///
+/// Same series and header contract as
+/// [`crate::middleware::axum::track_visitors`]. Attach with
+/// `.wrap(TrackVisitors)`.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct TrackVisitors;
+
+impl<S, B> Transform<S, ServiceRequest> for TrackVisitors
+where
+    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error> + 'static,
+    S::Future: 'static,
+    B: 'static,
+{
+    type Response = ServiceResponse<B>;
+    type Error = Error;
+    type Transform = TrackVisitorsService<S>;
+    type InitError = ();
+    type Future = Ready<Result<Self::Transform, Self::InitError>>;
+
+    fn new_transform(&self, service: S) -> Self::Future {
+        ready(Ok(TrackVisitorsService {
+            service: Rc::new(service),
+        }))
+    }
+}
+
+/// Inner service produced by [`TrackVisitors`].
+#[derive(Debug)]
+pub struct TrackVisitorsService<S> {
+    service: Rc<S>,
+}
+
+impl<S, B> Service<ServiceRequest> for TrackVisitorsService<S>
+where
+    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error> + 'static,
+    S::Future: 'static,
+    B: 'static,
+{
+    type Response = ServiceResponse<B>;
+    type Error = Error;
+    type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>>>>;
+
+    forward_ready!(service);
+
+    fn call(&self, req: ServiceRequest) -> Self::Future {
+        let service = Rc::clone(&self.service);
+        let headers = req.headers().clone();
+        let peer = req
+            .connection_info()
+            .realip_remote_addr()
+            .unwrap_or("direct")
+            .to_owned();
+        Box::pin(async move {
+            let region = crate::visitors::parse_region(
+                headers.get("cf-ipcountry").and_then(|v| v.to_str().ok()),
+                headers
+                    .get("x-vercel-ip-country")
+                    .and_then(|v| v.to_str().ok()),
+                headers
+                    .get("cloudfront-viewer-country")
+                    .and_then(|v| v.to_str().ok()),
+            );
+            let forwarded = headers.get("x-forwarded-for").and_then(|v| v.to_str().ok());
+            let user_agent = headers
+                .get("user-agent")
+                .and_then(|v| v.to_str().ok())
+                .unwrap_or("");
+            let key = crate::visitors::visitor_key(forwarded, &peer, user_agent);
+            let _ = crate::visitors::observe_visitor(&key, &region);
+            service.call(req).await
+        })
+    }
+}
+
 /// `GET /metrics` handler for Actix-web.
 ///
 /// `async` is required by Actix's `Handler` trait even though the body is ready.

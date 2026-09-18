@@ -59,6 +59,7 @@
 //! * [`engine`] — global [`engine::EngineHandle`] lifecycle.
 //! * [`config`] — [`config::Config`] and [`config::FjallConfig`] tuning.
 //! * [`types`] — [`types::MetricEntry`] and [`types::MetricType`].
+//! * [`visitors`] — visitor totals + HyperLogLog uniques by region.
 //! * [`crate::prometheus`] — registry sync (feature `prometheus-exporter`).
 //! * [`crate::storage`] — Fjall hot store + Parquet compaction
 //!   (feature `fjall-backend`; see [`crate::SCHEMA_VERSION`]).
@@ -97,6 +98,7 @@ pub mod engine;
 pub mod error;
 pub mod middleware;
 pub mod types;
+pub mod visitors;
 
 #[cfg(feature = "prometheus-exporter")]
 pub mod prometheus;

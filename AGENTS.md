@@ -47,7 +47,9 @@ MSRV 1.85+, edition 2024. `cargo clippy` pedantic is enforced
 * `src/storage/parquet_exporter.rs` — hourly `metrics_cold_*.parquet` ZSTD,
   rename-then-purge. `SCHEMA_VERSION` in `src/storage/mod.rs`.
 * `src/middleware/axum.rs`, `src/middleware/actix.rs` — route-template labels,
-  `/metrics`, `GET /telemetry/parquet`.
+  `/metrics`, `GET /telemetry/parquet`, `track_visitors` / `TrackVisitors`.
+* `src/visitors.rs` — `VisitorsTracker` (HLL uniques), `parse_region`,
+  `visitor_key`, `visitors_total` + `unique_visitors_estimate` series.
 * `tests/{engine_noop,fjall_roundtrip,prometheus_export}.rs`,
   `examples/{axum_server.rs,embedded_dashboard.html}`.
 

@@ -100,6 +100,41 @@ tonggeret::init(cfg)?;
 * If `init` runs before the Tokio runtime exists, call `tonggeret::spawn_compaction_task(&fjall_cfg)` once inside the runtime.
 * `tonggeret::shutdown()` persists + joins the writer at process exit.
 
+## Visitor tracking
+
+Count total visits and estimate unique visitors per region without a
+per-visitor label (which would explode Prometheus cardinality):
+
+```rust
+use axum::{Router, routing::get, middleware};
+use tonggeret::middleware::axum as dm_axum;
+use tonggeret::visitors::DEFAULT_SNAPSHOT_INTERVAL;
+
+# async fn hello() -> &'static str { "hi" }
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+tonggeret::init(tonggeret::Config::default_light())?;
+tonggeret::visitors::spawn_snapshot_task(DEFAULT_SNAPSHOT_INTERVAL);
+
+let app: Router = Router::new()
+    .route("/", get(hello))
+    .route("/metrics", get(dm_axum::prometheus_handler))
+    .layer(middleware::from_fn(dm_axum::track_visitors));
+Ok(())
+}
+```
+
+* Series: `visitors_total{region}` (counter, every visit) +
+  `unique_visitors_estimate{region}` (gauge, HyperLogLog ~1.6% error,
+  refreshed each snapshot).
+* Region comes from `CF-IPCountry` → `X-Vercel-IP-Country` →
+  `CloudFront-Viewer-Country` (validated 2-letter, else `unknown`;
+  region count capped, overflow → `other`).
+* Identity is first `X-Forwarded-For` (else peer) + `User-Agent`, hashed
+  into a 4 KiB-per-region sketch — raw identifiers are never stored.
+* Trust boundary: enable only behind a proxy/CDN that sets and sanitizes
+  these headers; spoofed headers can skew totals.
+
 ## Storage schema specification
 
 ### Fjall key format (hot store)

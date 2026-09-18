@@ -5,6 +5,13 @@ All notable changes to `tonggeret` are documented here. Format follows
 
 ## [Unreleased]
 
+### Added
+- Visitor tracking (`visitors` module + `track_visitors` Axum middleware /
+  `TrackVisitors` Actix middleware): `visitors_total{region}` counter and
+  `unique_visitors_estimate{region}` gauge via a std-only HyperLogLog
+  (~4 KiB/region, ~1.6% error). Regions come from CDN country headers;
+  visitor keys are hashed, never stored.
+
 ### Changed (breaking)
 - Crate renamed `duckmetrics` → `tonggeret` (matches the
   `maulanasly/tonggeret` remote); all `duckmetrics::` paths, the Actix
