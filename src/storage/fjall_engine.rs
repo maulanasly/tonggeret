@@ -136,8 +136,7 @@ pub fn entry_micros(entry: &MetricEntry) -> u64 {
     entry
         .timestamp
         .duration_since(UNIX_EPOCH)
-        .map(|d| u64::try_from(d.as_micros()).unwrap_or(u64::MAX))
-        .unwrap_or(0)
+        .map_or(0, |d| u64::try_from(d.as_micros()).unwrap_or(u64::MAX))
 }
 
 /// Dedicated writer-thread main loop.
