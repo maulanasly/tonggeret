@@ -1,9 +1,18 @@
 # duckmetrics
 
+[![CI](https://github.com/maulanasly/tonggeret/actions/workflows/ci.yml/badge.svg)](https://github.com/maulanasly/tonggeret/actions/workflows/ci.yml)
+[![crates.io](https://img.shields.io/crates/v/duckmetrics.svg)](https://crates.io/crates/duckmetrics)
+[![docs.rs](https://img.shields.io/docsrs/duckmetrics.svg)](https://docs.rs/duckmetrics)
+[![MSRV](https://img.shields.io/badge/MSRV-1.85-blue.svg)](https://www.rust-lang.org)
+[![license](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE-MIT)
+[![edition](https://img.shields.io/badge/edition-2024-blueviolet.svg)](https://doc.rust-lang.org/edition-guide/rust-2024/)
+
 Ultra-low-memory Rust telemetry: **embedded Fjall LSM-tree** (<10 MiB RAM footprint) for high-throughput local ingestion, standard **Prometheus exposition**, and periodic **Parquet cold storage** — behind a non-blocking, lock-free hot path.
 
+> Crate name is `duckmetrics`; the GitHub remote is [`maulanasly/tonggeret`](https://github.com/maulanasly/tonggeret).
+
 * Dual-mode dispatch: every `counter!` / `gauge!` / `histogram!` updates Prometheus atomics **and** streams to Fjall via a bounded channel → dedicated writer thread → LSM memtable.
-* Pure Rust, no SQL engine, no C++ toolchain: `fjall` + `parquet` + `arrow` only.
+* Pure Rust, no SQL engine, no C++ toolchain: `fjall` + `parquet` + `arrow` only. `#![forbid(unsafe_code)]`.
 * Plug-and-play Axum (`from_fn`) and Actix-web (`Transform`) middleware recording `http_requests_total` + `http_request_duration_ms`.
 
 ```rust
@@ -14,20 +23,26 @@ duckmetrics::gauge!("queue_depth", 42.0);
 duckmetrics::histogram!("db_query_ms", 12.4, table = "orders");
 ```
 
+## Status
+
+Pre-1.0 (`0.1.0` is the first release of the restarted line; prior DuckDB-based iteration was discarded). Expect additive API evolution; any breaking storage change bumps `SCHEMA_VERSION` and is noted in [`CHANGELOG.md`](CHANGELOG.md).
+
+Docs: [`docs.rs/duckmetrics`](https://docs.rs/duckmetrics) · Changelog: [`CHANGELOG.md`](CHANGELOG.md) · Contributing: [`AGENTS.md`](AGENTS.md).
+
 ## Installation
 
 ```toml
 # Prometheus + Axum (defaults, fast build)
-duckmetrics = "0.2"
+duckmetrics = "0.1"
 
 # Dual-mode with embedded Fjall + Parquet (pure Rust, no system deps)
-duckmetrics = { version = "0.2", features = ["fjall-backend"] }
+duckmetrics = { version = "0.1", features = ["fjall-backend"] }
 
 # Actix-web instead of / in addition to Axum
-duckmetrics = { version = "0.2", default-features = false, features = ["actix", "prometheus-exporter"] }
+duckmetrics = { version = "0.1", default-features = false, features = ["actix", "prometheus-exporter"] }
 ```
 
-Requires Rust **1.85+** (edition 2024). License: **MIT**.
+Requires Rust **1.85+** (edition 2024, MSRV enforced in CI). License: **MIT** ([`LICENSE-MIT`](LICENSE-MIT)).
 
 ## Feature flags
 
@@ -144,8 +159,25 @@ For interactive exploration, open [`examples/embedded_dashboard.html`](examples/
 * `#![forbid(unsafe_code)]` — Fjall and Parquet are 100% safe Rust.
 * `OnceLock` global, `try_send`-only hot path, `thiserror` errors, `///` docs + doctests on every public API.
 
+## Development
+
+```bash
+cargo build
+cargo test                                        # default features
+cargo test --features fjall-backend               # full dual-mode
+cargo test --all-features                         # includes actix
+cargo clippy --all-targets --all-features -- -D warnings
+cargo fmt --check
+```
+
+CI ([`ci.yml`](.github/workflows/ci.yml)) runs fmt, clippy, the test matrix above, `cargo doc`, an MSRV 1.85 gate, and `cargo audit` on every push to `main` and every PR. See [`AGENTS.md`](AGENTS.md) for the mandatory contributor workflow (branches, context memory, tests, pre-commit, PRs, releases).
+
 ## Troubleshooting
 
 * `fjall config supplied but fjall-backend feature is not enabled` → add `features = ["fjall-backend"]`.
 * `/metrics` returns 503 → `init` not called (macros no-op until then by design).
 * `/telemetry/parquet` returns 404 → no export yet (compaction runs hourly; only keys older than `retention` are exported).
+
+## License
+
+MIT — see [`LICENSE-MIT`](LICENSE-MIT).
