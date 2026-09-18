@@ -5,6 +5,25 @@ All notable changes to `tonggeret` are documented here. Format follows
 
 ## [Unreleased]
 
+### Fixed
+- CI `audit` job: replaced `rustsec/audit-check@v2` (Node20 bundle →
+  deprecation warning; Checks API → `Resource not accessible by
+  integration` on fork PRs) with direct `cargo install cargo-audit` +
+  `cargo audit` (no Node runtime, fork-safe, gated instead of
+  `continue-on-error`). Policy lives in `.cargo/audit.toml`.
+- Bumped `actions/checkout@v4` → `@v5` in all jobs (`v4` is also a Node20
+  action; `v5` runs on Node24). `dtolnay/rust-toolchain` is composite
+  (no Node runtime) and `Swatinem/rust-cache@v2` already targets Node24,
+  so no Node20 warnings should remain.
+- Fixed `RUSTSEC-2024-0437` (`protobuf 2.28` → `3.7.2`) via
+  `prometheus 0.13` → `0.14` (no API change for the registry usage here).
+- Documented time-boxed ignores in `.cargo/audit.toml` for the two
+  advisories with no MSRV-compatible fix, both reachable only via the
+  optional `actix` feature: `RUSTSEC-2026-0258` (`h2 0.3`, no fixed
+  `0.3.x` line; revisit when `actix-http` migrates to `h2 0.4`) and
+  `RUSTSEC-2026-0009` (`time 0.3.45`; fix `>=0.3.47` needs Rust 1.88 >
+  MSRV 1.85; revisit on MSRV bump). `SCHEMA_VERSION` unchanged (1).
+
 ### Changed (breaking)
 - Crate renamed `duckmetrics` → `tonggeret` (matches the
   `maulanasly/tonggeret` remote); all `duckmetrics::` paths, the Actix

@@ -1,0 +1,27 @@
+# `cargo audit` policy for `tonggeret`.
+#
+# Only advisories with no MSRV-compatible fix are ignored here, each with a
+# justification and a revisit condition. Everything fixable is fixed via
+# `cargo update` instead (e.g. `prometheus 0.14` for `RUSTSEC-2024-0437`).
+# Informational warnings (`paste` unmaintained, `lexical-core` unsound via
+# `arrow`/`parquet 50`) do not fail the audit and are tracked via Dependabot
+# majors (`arrow 54`, `parquet 51`), not here.
+
+[advisories]
+ignore = [
+    # RUSTSEC-2026-0258: `h2 0.3.27` unbounded empty DATA frames (low-severity
+    # DoS). No fixed `0.3.x` release exists; the fix is `>=0.4.16` only, and
+    # `actix-http 3.x` (via optional `actix` feature) still pins `h2 0.3`.
+    # Only reachable with `--features actix` / `--all-features`; default and
+    # `fjall-backend` builds are unaffected. Revisit when `actix-http`
+    # migrates to `h2 0.4` (re-run `cargo audit`, drop this entry).
+    "RUSTSEC-2026-0258",
+    # RUSTSEC-2026-0009: `time 0.3.45` stack-exhaustion DoS (medium, 6.8).
+    # Fix is `>=0.3.47`, but that release requires Rust 1.88, above this
+    # crate's MSRV 1.85 (`Cargo.toml rust-version`). Only reachable via the
+    # optional `actix` feature (`actix-web`/`cookie`); default and
+    # `fjall-backend` builds are unaffected. Revisit on the next MSRV bump:
+    # `cargo update -p time`, verify `cargo test --locked` on the new MSRV,
+    # then drop this entry.
+    "RUSTSEC-2026-0009",
+]
